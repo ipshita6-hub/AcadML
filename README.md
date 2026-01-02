@@ -31,8 +31,8 @@ The project achieves the following performance:
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/academic-performance-prediction.git
-cd academic-performance-prediction
+git clone https://github.com/ipshita6-hub/AcadML.git
+cd AcadML
 ```
 
 2. Install dependencies:
@@ -63,7 +63,7 @@ data_loader = DataLoader(data_path='your_dataset.csv')
 ## 📁 Project Structure
 
 ```
-academic-performance-prediction/
+AcadML/
 ├── src/                          # Source code modules
 │   ├── __init__.py
 │   ├── data_loader.py           # Data loading and preprocessing
