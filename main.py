@@ -12,30 +12,44 @@ from src.cross_validation import CrossValidator
 from src.hyperparameter_tuning import HyperparameterTuner
 from src.evaluation_metrics import ModelEvaluator
 from src.data_validation import DataValidator
+from src.config_manager import ConfigManager
 import pandas as pd
 
 def main():
     print("🎓 Academic Performance Prediction Project - Enhanced Edition")
     print("=" * 60)
     
-    # Initialize components
+    # Load configuration
+    config = ConfigManager()
+    config.validate_config()
+    config.create_directories()
+    config.print_config()
+    
+    # Initialize components with configuration
     data_loader = DataLoader()
     model_trainer = ModelTrainer()
-    visualizer = Visualizer()
-    enhanced_viz = EnhancedVisualizer()
-    cv_validator = CrossValidator(cv_folds=5)
-    hp_tuner = HyperparameterTuner(cv_folds=3)
+    visualizer = Visualizer(results_dir=config.get('visualization.results_dir'))
+    enhanced_viz = EnhancedVisualizer(results_dir=config.get('visualization.results_dir'))
+    cv_validator = CrossValidator(
+        cv_folds=config.get('cross_validation.cv_folds'),
+        random_state=config.get('cross_validation.random_state')
+    )
+    hp_tuner = HyperparameterTuner(
+        cv_folds=config.get('hyperparameter_tuning.cv_folds'),
+        n_jobs=config.get('hyperparameter_tuning.n_jobs'),
+        random_state=config.get('hyperparameter_tuning.random_state')
+    )
     evaluator = ModelEvaluator()
     validator = DataValidator()
     
     # Load and preprocess data
     print("\n📊 Loading and preprocessing data...")
-    df = data_loader.load_data()
+    df = data_loader.generate_sample_data(n_samples=config.get('data.sample_size'))
     print(f"Dataset shape: {df.shape}")
     print(f"Features: {list(df.columns)}")
     
     # Validate data quality
-    validator.validate_dataset(df)
+    validator.validate_dataset(df, target_column=config.get('data.target_column'))
     validator.print_validation_report()
     quality_score = validator.get_data_quality_score()
     print(f"\n🏆 Data Quality Score: {quality_score:.1f}/100")
@@ -59,7 +73,11 @@ def main():
     
     # Preprocess data
     X, y, feature_names = data_loader.preprocess_data(df)
-    X_train, X_test, y_train, y_test = data_loader.split_data(X, y)
+    X_train, X_test, y_train, y_test = data_loader.split_data(
+        X, y, 
+        test_size=config.get('data.test_size'),
+        random_state=config.get('data.random_state')
+    )
     
     print(f"\nTraining set size: {X_train.shape[0]}")
     print(f"Test set size: {X_test.shape[0]}")
@@ -78,7 +96,11 @@ def main():
     print(cv_summary.round(4))
     
     # Hyperparameter tuning
-    hp_tuner.tune_hyperparameters(X_train, y_train, method='randomized', n_iter=20)
+    hp_tuner.tune_hyperparameters(
+        X_train, y_train, 
+        method=config.get('hyperparameter_tuning.method'),
+        n_iter=config.get('hyperparameter_tuning.n_iter')
+    )
     hp_tuner.print_tuning_results()
     
     # Get tuning summary
