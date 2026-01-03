@@ -11,6 +11,7 @@ from src.enhanced_visualizer import EnhancedVisualizer
 from src.cross_validation import CrossValidator
 from src.hyperparameter_tuning import HyperparameterTuner
 from src.evaluation_metrics import ModelEvaluator
+from src.data_validation import DataValidator
 import pandas as pd
 
 def main():
@@ -25,12 +26,19 @@ def main():
     cv_validator = CrossValidator(cv_folds=5)
     hp_tuner = HyperparameterTuner(cv_folds=3)
     evaluator = ModelEvaluator()
+    validator = DataValidator()
     
     # Load and preprocess data
     print("\n📊 Loading and preprocessing data...")
     df = data_loader.load_data()
     print(f"Dataset shape: {df.shape}")
     print(f"Features: {list(df.columns)}")
+    
+    # Validate data quality
+    validator.validate_dataset(df)
+    validator.print_validation_report()
+    quality_score = validator.get_data_quality_score()
+    print(f"\n🏆 Data Quality Score: {quality_score:.1f}/100")
     
     # Show data info
     print("\n📈 Dataset Overview:")
