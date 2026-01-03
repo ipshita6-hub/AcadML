@@ -1,21 +1,24 @@
 #!/usr/bin/env python3
 """
 Academic Performance Prediction using Machine Learning Classification
+Enhanced with Interactive Visualizations and Advanced Metrics
 """
 
 from src.data_loader import DataLoader
 from src.models import ModelTrainer
 from src.visualizer import Visualizer
+from src.enhanced_visualizer import EnhancedVisualizer
 import pandas as pd
 
 def main():
-    print("🎓 Academic Performance Prediction Project")
-    print("=" * 50)
+    print("🎓 Academic Performance Prediction Project - Enhanced Edition")
+    print("=" * 60)
     
     # Initialize components
     data_loader = DataLoader()
     model_trainer = ModelTrainer()
     visualizer = Visualizer()
+    enhanced_viz = EnhancedVisualizer()
     
     # Load and preprocess data
     print("\n📊 Loading and preprocessing data...")
@@ -29,9 +32,16 @@ def main():
     print(f"\nTarget distribution:")
     print(df['performance'].value_counts())
     
-    # Visualize data distribution
-    print("\n📊 Creating data visualizations...")
-    visualizer.plot_data_distribution(df)
+    # Enhanced visualizations
+    print("\n🎨 Creating enhanced interactive visualizations...")
+    
+    # Interactive data distribution
+    print("  → Interactive data distribution plots...")
+    enhanced_viz.plot_interactive_data_distribution(df)
+    
+    # Correlation analysis
+    print("  → Feature correlation heatmap...")
+    enhanced_viz.plot_correlation_heatmap(df)
     
     # Preprocess data
     X, y, feature_names = data_loader.preprocess_data(df)
@@ -48,8 +58,36 @@ def main():
     print("\n📊 Evaluating models...")
     model_trainer.evaluate_models(X_test, y_test, data_loader.target_encoder)
     
-    # Visualize results
-    print("\n📈 Creating result visualizations...")
+    # Enhanced result visualizations
+    print("\n📈 Creating enhanced result visualizations...")
+    
+    # Interactive model comparison
+    print("  → Interactive model comparison...")
+    enhanced_viz.plot_interactive_model_comparison(model_trainer.results)
+    
+    # ROC Curves
+    print("  → ROC curves analysis...")
+    enhanced_viz.plot_roc_curves(model_trainer.trained_models, X_test, y_test, data_loader.target_encoder)
+    
+    # Precision-Recall Curves
+    print("  → Precision-Recall curves...")
+    enhanced_viz.plot_precision_recall_curves(model_trainer.trained_models, X_test, y_test, data_loader.target_encoder)
+    
+    # Enhanced confusion matrices
+    print("  → Enhanced confusion matrices...")
+    enhanced_viz.plot_enhanced_confusion_matrices(model_trainer.results, data_loader.target_encoder)
+    
+    # Feature importance comparison
+    print("  → Feature importance comparison...")
+    enhanced_viz.plot_feature_importance_comparison(model_trainer.trained_models, feature_names)
+    
+    # Performance dashboard
+    print("  → Performance dashboard...")
+    enhanced_viz.create_model_performance_dashboard(model_trainer.results)
+    
+    # Original visualizations (for comparison)
+    print("\n📊 Creating traditional visualizations...")
+    visualizer.plot_data_distribution(df)
     visualizer.plot_model_comparison(model_trainer.results)
     visualizer.plot_confusion_matrices(model_trainer.results, data_loader.target_encoder)
     
@@ -64,7 +102,13 @@ def main():
     # Save best model
     model_trainer.save_model(best_name, best_model, f'models/best_model_{best_name.replace(" ", "_")}.pkl')
     
-    print("\n✅ Analysis complete! Check the 'results' folder for visualizations.")
+    print("\n✅ Enhanced analysis complete!")
+    print("📁 Check the 'results' folder for:")
+    print("   • Interactive HTML visualizations")
+    print("   • High-resolution PNG images")
+    print("   • ROC and Precision-Recall curves")
+    print("   • Performance dashboard")
+    print("   • Feature importance analysis")
     print("📁 Best model saved in 'models' folder.")
 
 if __name__ == "__main__":

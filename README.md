@@ -11,7 +11,8 @@ A comprehensive machine learning project that predicts student academic performa
 - **Synthetic Data Generation**: Creates realistic academic performance datasets
 - **Multiple ML Models**: Implements 5 different classification algorithms
 - **Comprehensive Evaluation**: Accuracy, classification reports, and confusion matrices
-- **Rich Visualizations**: Data distribution, model comparison, and feature importance plots
+- **Enhanced Visualizations**: Interactive plots with Plotly, ROC curves, and precision-recall analysis
+- **Advanced Metrics**: ROC-AUC scores, precision-recall curves, and detailed confusion matrices
 - **Model Persistence**: Saves the best performing model for future use
 - **Interactive Exploration**: Jupyter notebook for data analysis
 
@@ -103,10 +104,24 @@ The synthetic dataset includes the following features:
 4. **Logistic Regression**: Linear probabilistic classifier
 5. **K-Nearest Neighbors (KNN)**: Instance-based learning
 
-## 📈 Visualizations
+## 📈 Enhanced Visualizations
 
-The project generates several insightful visualizations:
+The project now includes both traditional and interactive visualizations:
 
+### Interactive Visualizations (HTML)
+- **Interactive Data Distribution**: Hover-enabled histograms and pie charts
+- **Correlation Heatmap**: Interactive feature correlation matrix
+- **Model Comparison**: Interactive bar charts with detailed metrics
+- **Feature Importance**: Comparative analysis across tree-based models
+- **Performance Dashboard**: Comprehensive multi-panel overview
+
+### Advanced Analysis Plots
+- **ROC Curves**: Receiver Operating Characteristic curves for all models
+- **Precision-Recall Curves**: Detailed performance analysis
+- **Enhanced Confusion Matrices**: With both counts and percentages
+- **Feature Correlation**: Triangle matrix and full interactive heatmap
+
+### Traditional Visualizations (PNG)
 - **Data Distribution**: Histograms and pie charts of feature distributions
 - **Model Comparison**: Bar chart comparing model accuracies
 - **Confusion Matrices**: Heatmaps showing prediction vs actual results
