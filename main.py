@@ -10,6 +10,7 @@ from src.visualizer import Visualizer
 from src.enhanced_visualizer import EnhancedVisualizer
 from src.cross_validation import CrossValidator
 from src.hyperparameter_tuning import HyperparameterTuner
+from src.evaluation_metrics import ModelEvaluator
 import pandas as pd
 
 def main():
@@ -23,6 +24,7 @@ def main():
     enhanced_viz = EnhancedVisualizer()
     cv_validator = CrossValidator(cv_folds=5)
     hp_tuner = HyperparameterTuner(cv_folds=3)
+    evaluator = ModelEvaluator()
     
     # Load and preprocess data
     print("\n📊 Loading and preprocessing data...")
@@ -79,6 +81,17 @@ def main():
     # Evaluate models
     print("\n📊 Evaluating models...")
     model_trainer.evaluate_models(X_test, y_test, data_loader.target_encoder)
+    
+    # Comprehensive evaluation with detailed metrics
+    detailed_metrics = evaluator.evaluate_all_models(
+        model_trainer.trained_models, X_test, y_test, data_loader.target_encoder
+    )
+    evaluator.print_detailed_results()
+    
+    # Get metrics comparison
+    metrics_comparison = evaluator.get_metrics_comparison()
+    print(f"\n📋 Comprehensive Metrics Comparison:")
+    print(metrics_comparison)
     
     # Enhanced result visualizations
     print("\n📈 Creating enhanced result visualizations...")
