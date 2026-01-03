@@ -9,6 +9,7 @@ from src.models import ModelTrainer
 from src.visualizer import Visualizer
 from src.enhanced_visualizer import EnhancedVisualizer
 from src.cross_validation import CrossValidator
+from src.hyperparameter_tuning import HyperparameterTuner
 import pandas as pd
 
 def main():
@@ -21,6 +22,7 @@ def main():
     visualizer = Visualizer()
     enhanced_viz = EnhancedVisualizer()
     cv_validator = CrossValidator(cv_folds=5)
+    hp_tuner = HyperparameterTuner(cv_folds=3)
     
     # Load and preprocess data
     print("\n📊 Loading and preprocessing data...")
@@ -64,6 +66,15 @@ def main():
     cv_summary = cv_validator.get_cv_summary()
     print(f"\n📋 Cross-Validation Summary:")
     print(cv_summary.round(4))
+    
+    # Hyperparameter tuning
+    hp_tuner.tune_hyperparameters(X_train, y_train, method='randomized', n_iter=20)
+    hp_tuner.print_tuning_results()
+    
+    # Get tuning summary
+    tuning_summary = hp_tuner.get_tuning_summary()
+    print(f"\n🎯 Hyperparameter Tuning Summary:")
+    print(tuning_summary)
     
     # Evaluate models
     print("\n📊 Evaluating models...")
