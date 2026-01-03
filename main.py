@@ -16,6 +16,7 @@ from src.config_manager import ConfigManager
 from src.logger import MLLogger
 from src.cli_parser import CLIParser
 from src.report_generator import ReportGenerator
+from src.benchmarking import PerformanceBenchmark
 import pandas as pd
 import time
 import sys
@@ -93,6 +94,12 @@ def main():
     validator = DataValidator()
     report_generator = ReportGenerator(config)
     
+    # Initialize benchmarking if profiling is enabled
+    benchmark = None
+    if args.profile:
+        benchmark = PerformanceBenchmark()
+        logger.info("Performance profiling enabled")
+    
     # Load and preprocess data
     if not args.quiet:
         print("\n📊 Loading and preprocessing data...")
@@ -164,7 +171,15 @@ def main():
     logger.info("Starting model training")
     training_start = time.time()
     
-    model_trainer.train_models(X_train, y_train)
+    # Benchmark model training if profiling enabled
+    if benchmark:
+        training_benchmarks = benchmark.benchmark_model_training(
+            model_trainer.models, X_train, y_train
+        )
+        # Use the last trained models
+        model_trainer.trained_models = model_trainer.models
+    else:
+        model_trainer.train_models(X_train, y_train)
     
     training_end = time.time()
     logger.log_execution_time("Model training", training_start, training_end)
@@ -252,6 +267,41 @@ def main():
     visualizer.plot_model_comparison(model_trainer.results)
     visualizer.plot_confusion_matrices(model_trainer.results, data_loader.target_encoder)
     
+    # Performance benchmarking
+    if benchmark:
+        logger.info("Running performance benchmarks")
+        
+        # Benchmark prediction speed
+        prediction_benchmarks = benchmark.benchmark_prediction_speed(
+            model_trainer.trained_models, X_test
+        )
+        
+        # Compare model efficiency
+        if 'training_benchmarks' in locals():
+            efficiency_comparison = benchmark.compare_model_efficiency(
+                training_benchmarks, prediction_benchmarks
+            )
+            
+            if not args.quiet:
+                print("\n⚡ Performance Benchmarks:")
+                print("-" * 40)
+                for model_name, metrics in efficiency_comparison.items():
+                    print(f"{model_name}:")
+                    print(f"  Training Efficiency: {metrics['training_efficiency']:.4f}")
+                    print(f"  Prediction Speed: {metrics['prediction_speed']:.2f} pred/sec")
+                    print(f"  Overall Efficiency: {metrics['overall_efficiency']:.4f}")
+        
+        # Save benchmark report
+        benchmark_files = benchmark.save_benchmark_report(
+            output_dir=config.get('visualization.results_dir', 'results')
+        )
+        
+        if not args.quiet:
+            print(f"\n📊 Benchmark reports saved:")
+            for file_path in benchmark_files:
+                print(f"   • {file_path}")
+        
+        benchmark.print_benchmark_summary()
     # Get best model and show feature importance
     best_name, best_model = model_trainer.get_best_model()
     logger.log_best_model(best_name, model_trainer.results[best_name]['accuracy'])
