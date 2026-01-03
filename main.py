@@ -13,9 +13,13 @@ from src.hyperparameter_tuning import HyperparameterTuner
 from src.evaluation_metrics import ModelEvaluator
 from src.data_validation import DataValidator
 from src.config_manager import ConfigManager
+from src.logger import MLLogger
 import pandas as pd
+import time
 
 def main():
+    start_time = time.time()
+    
     print("🎓 Academic Performance Prediction Project - Enhanced Edition")
     print("=" * 60)
     
@@ -23,6 +27,11 @@ def main():
     config = ConfigManager()
     config.validate_config()
     config.create_directories()
+    
+    # Initialize logger
+    logger = MLLogger(config)
+    session_id = logger.create_session_log()
+    
     config.print_config()
     
     # Initialize components with configuration
@@ -44,14 +53,20 @@ def main():
     
     # Load and preprocess data
     print("\n📊 Loading and preprocessing data...")
+    logger.info("Starting data loading and preprocessing")
+    
     df = data_loader.generate_sample_data(n_samples=config.get('data.sample_size'))
+    logger.log_data_info(df)
+    
     print(f"Dataset shape: {df.shape}")
     print(f"Features: {list(df.columns)}")
     
     # Validate data quality
+    logger.info("Starting data validation")
     validator.validate_dataset(df, target_column=config.get('data.target_column'))
     validator.print_validation_report()
     quality_score = validator.get_data_quality_score()
+    logger.log_data_validation(quality_score)
     print(f"\n🏆 Data Quality Score: {quality_score:.1f}/100")
     
     # Show data info
@@ -84,9 +99,16 @@ def main():
     
     # Train models
     print("\n🤖 Training machine learning models...")
+    logger.info("Starting model training")
+    training_start = time.time()
+    
     model_trainer.train_models(X_train, y_train)
     
+    training_end = time.time()
+    logger.log_execution_time("Model training", training_start, training_end)
+    
     # Perform cross-validation
+    logger.info("Starting cross-validation")
     cv_validator.perform_cross_validation(model_trainer.models, X, y)
     cv_validator.print_cv_results()
     
@@ -96,12 +118,18 @@ def main():
     print(cv_summary.round(4))
     
     # Hyperparameter tuning
+    logger.info("Starting hyperparameter tuning")
+    tuning_start = time.time()
+    
     hp_tuner.tune_hyperparameters(
         X_train, y_train, 
         method=config.get('hyperparameter_tuning.method'),
         n_iter=config.get('hyperparameter_tuning.n_iter')
     )
     hp_tuner.print_tuning_results()
+    
+    tuning_end = time.time()
+    logger.log_execution_time("Hyperparameter tuning", tuning_start, tuning_end)
     
     # Get tuning summary
     tuning_summary = hp_tuner.get_tuning_summary()
@@ -158,6 +186,8 @@ def main():
     
     # Get best model and show feature importance
     best_name, best_model = model_trainer.get_best_model()
+    logger.log_best_model(best_name, model_trainer.results[best_name]['accuracy'])
+    
     print(f"\n🏆 Best performing model: {best_name}")
     print(f"Best accuracy: {model_trainer.results[best_name]['accuracy']:.4f}")
     
@@ -165,7 +195,14 @@ def main():
     visualizer.plot_feature_importance(best_model, feature_names, best_name)
     
     # Save best model
-    model_trainer.save_model(best_name, best_model, f'models/best_model_{best_name.replace(" ", "_")}.pkl')
+    model_path = f'models/best_model_{best_name.replace(" ", "_")}.pkl'
+    model_trainer.save_model(best_name, best_model, model_path)
+    logger.info(f"Best model saved to {model_path}")
+    
+    # End session
+    end_time = time.time()
+    logger.log_execution_time("Total execution", start_time, end_time)
+    logger.end_session_log(session_id)
     
     print("\n✅ Enhanced analysis complete!")
     print("📁 Check the 'results' folder for:")
@@ -175,6 +212,7 @@ def main():
     print("   • Performance dashboard")
     print("   • Feature importance analysis")
     print("📁 Best model saved in 'models' folder.")
+    print("📋 Detailed logs saved in 'logs' folder.")
 
 if __name__ == "__main__":
     main()
