@@ -15,6 +15,7 @@ from src.data_validation import DataValidator
 from src.config_manager import ConfigManager
 from src.logger import MLLogger
 from src.cli_parser import CLIParser
+from src.report_generator import ReportGenerator
 import pandas as pd
 import time
 import sys
@@ -90,6 +91,7 @@ def main():
     )
     evaluator = ModelEvaluator()
     validator = DataValidator()
+    report_generator = ReportGenerator(config)
     
     # Load and preprocess data
     if not args.quiet:
@@ -265,20 +267,64 @@ def main():
     model_trainer.save_model(best_name, best_model, model_path)
     logger.info(f"Best model saved to {model_path}")
     
-    # End session
+    # End session and generate report
     end_time = time.time()
+    execution_times = {
+        'total': end_time - start_time,
+        'training': training_end - training_start if 'training_end' in locals() else 0,
+        'tuning': tuning_end - tuning_start if 'tuning_end' in locals() else 0
+    }
+    
     logger.log_execution_time("Total execution", start_time, end_time)
     logger.end_session_log(session_id)
     
-    print("\n✅ Enhanced analysis complete!")
-    print("📁 Check the 'results' folder for:")
-    print("   • Interactive HTML visualizations")
-    print("   • High-resolution PNG images")
-    print("   • ROC and Precision-Recall curves")
-    print("   • Performance dashboard")
-    print("   • Feature importance analysis")
-    print("📁 Best model saved in 'models' folder.")
-    print("📋 Detailed logs saved in 'logs' folder.")
+    # Generate comprehensive report
+    if config.get('output.generate_report', True):
+        logger.info("Generating comprehensive report")
+        
+        data_info = {
+            'shape': df.shape,
+            'features': list(df.columns),
+            'target_distribution': df['performance'].value_counts().to_dict()
+        }
+        
+        best_model_info = {
+            'name': best_name,
+            'accuracy': model_trainer.results[best_name]['accuracy']
+        }
+        
+        report_generator.generate_comprehensive_report(
+            data_info=data_info,
+            validation_results={'quality_score': quality_score} if 'quality_score' in locals() else None,
+            cv_results=cv_validator.cv_results if cli_parser.should_run_component('cross_validation') else None,
+            tuning_results=hp_tuner.tuning_results if cli_parser.should_run_component('hyperparameter_tuning') else None,
+            evaluation_results=evaluator.detailed_results,
+            best_model_info=best_model_info,
+            execution_times=execution_times
+        )
+        
+        # Save report in multiple formats
+        report_files = report_generator.save_report(
+            output_dir=config.get('visualization.results_dir', 'results'),
+            formats=config.get('output.results_format', ['json', 'html'])
+        )
+        
+        if not args.quiet:
+            print(f"\n📋 Comprehensive report generated:")
+            for file_path in report_files:
+                print(f"   • {file_path}")
+    
+    if not args.quiet:
+        print("\n✅ Enhanced analysis complete!")
+        print("📁 Check the 'results' folder for:")
+        print("   • Interactive HTML visualizations")
+        print("   • High-resolution PNG images")
+        print("   • ROC and Precision-Recall curves")
+        print("   • Performance dashboard")
+        print("   • Feature importance analysis")
+        print("   • Comprehensive ML report")
+        print("📁 Best model saved in 'models' folder.")
+        print("📋 Detailed logs saved in 'logs' folder.")
 
 if __name__ == "__main__":
     main()
