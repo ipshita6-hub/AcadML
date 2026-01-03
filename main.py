@@ -8,6 +8,7 @@ from src.data_loader import DataLoader
 from src.models import ModelTrainer
 from src.visualizer import Visualizer
 from src.enhanced_visualizer import EnhancedVisualizer
+from src.cross_validation import CrossValidator
 import pandas as pd
 
 def main():
@@ -19,6 +20,7 @@ def main():
     model_trainer = ModelTrainer()
     visualizer = Visualizer()
     enhanced_viz = EnhancedVisualizer()
+    cv_validator = CrossValidator(cv_folds=5)
     
     # Load and preprocess data
     print("\n📊 Loading and preprocessing data...")
@@ -53,6 +55,15 @@ def main():
     # Train models
     print("\n🤖 Training machine learning models...")
     model_trainer.train_models(X_train, y_train)
+    
+    # Perform cross-validation
+    cv_validator.perform_cross_validation(model_trainer.models, X, y)
+    cv_validator.print_cv_results()
+    
+    # Get CV summary
+    cv_summary = cv_validator.get_cv_summary()
+    print(f"\n📋 Cross-Validation Summary:")
+    print(cv_summary.round(4))
     
     # Evaluate models
     print("\n📊 Evaluating models...")
