@@ -14,17 +14,47 @@ from src.evaluation_metrics import ModelEvaluator
 from src.data_validation import DataValidator
 from src.config_manager import ConfigManager
 from src.logger import MLLogger
+from src.cli_parser import CLIParser
 import pandas as pd
 import time
+import sys
 
 def main():
     start_time = time.time()
     
+    # Parse command line arguments
+    cli_parser = CLIParser()
+    args = cli_parser.parse_args()
+    cli_parser.validate_args()
+    
     print("🎓 Academic Performance Prediction Project - Enhanced Edition")
     print("=" * 60)
     
+    # Show CLI arguments if any were provided
+    if len(sys.argv) > 1:
+        cli_parser.print_args_summary()
+    
+    # Handle special modes
+    if args.dry_run:
+        print("\n🔍 DRY RUN MODE - Showing configuration without execution")
+    
+    if args.run_tests:
+        print("\n🧪 Running unit tests...")
+        import subprocess
+        result = subprocess.run([sys.executable, 'tests/run_tests.py'], 
+                              capture_output=True, text=True)
+        print(result.stdout)
+        if result.returncode != 0:
+            print("❌ Tests failed. Exiting.")
+            sys.exit(1)
+        print("✅ All tests passed!")
+    
     # Load configuration
-    config = ConfigManager()
+    config = ConfigManager(args.config)
+    
+    # Update config with CLI arguments
+    cli_parser.update_config_from_args(config)
+    
     config.validate_config()
     config.create_directories()
     
@@ -32,7 +62,17 @@ def main():
     logger = MLLogger(config)
     session_id = logger.create_session_log()
     
-    config.print_config()
+    # Save config if requested
+    if args.save_config:
+        config.save_config(args.save_config)
+        print(f"✅ Configuration saved to {args.save_config}")
+    
+    if not args.quiet:
+        config.print_config()
+    
+    if args.dry_run:
+        print("\n✅ Dry run completed. Configuration validated.")
+        return
     
     # Initialize components with configuration
     data_loader = DataLoader()
@@ -52,22 +92,38 @@ def main():
     validator = DataValidator()
     
     # Load and preprocess data
-    print("\n📊 Loading and preprocessing data...")
+    if not args.quiet:
+        print("\n📊 Loading and preprocessing data...")
     logger.info("Starting data loading and preprocessing")
     
-    df = data_loader.generate_sample_data(n_samples=config.get('data.sample_size'))
+    if args.data_file:
+        # Load custom dataset
+        try:
+            df = pd.read_csv(args.data_file)
+            logger.info(f"Loaded custom dataset from {args.data_file}")
+        except Exception as e:
+            logger.error(f"Failed to load custom dataset: {e}")
+            sys.exit(1)
+    else:
+        # Generate sample data
+        df = data_loader.generate_sample_data(n_samples=config.get('data.sample_size'))
+    
     logger.log_data_info(df)
     
-    print(f"Dataset shape: {df.shape}")
-    print(f"Features: {list(df.columns)}")
+    if not args.quiet:
+        print(f"Dataset shape: {df.shape}")
+        print(f"Features: {list(df.columns)}")
     
     # Validate data quality
-    logger.info("Starting data validation")
-    validator.validate_dataset(df, target_column=config.get('data.target_column'))
-    validator.print_validation_report()
-    quality_score = validator.get_data_quality_score()
-    logger.log_data_validation(quality_score)
-    print(f"\n🏆 Data Quality Score: {quality_score:.1f}/100")
+    if cli_parser.should_run_component('data_validation'):
+        logger.info("Starting data validation")
+        validator.validate_dataset(df, target_column=config.get('data.target_column'))
+        if not args.quiet:
+            validator.print_validation_report()
+        quality_score = validator.get_data_quality_score()
+        logger.log_data_validation(quality_score)
+        if not args.quiet:
+            print(f"\n🏆 Data Quality Score: {quality_score:.1f}/100")
     
     # Show data info
     print("\n📈 Dataset Overview:")
@@ -76,15 +132,19 @@ def main():
     print(df['performance'].value_counts())
     
     # Enhanced visualizations
-    print("\n🎨 Creating enhanced interactive visualizations...")
-    
-    # Interactive data distribution
-    print("  → Interactive data distribution plots...")
-    enhanced_viz.plot_interactive_data_distribution(df)
-    
-    # Correlation analysis
-    print("  → Feature correlation heatmap...")
-    enhanced_viz.plot_correlation_heatmap(df)
+    if cli_parser.should_run_component('visualization'):
+        if not args.quiet:
+            print("\n🎨 Creating enhanced interactive visualizations...")
+        
+        # Interactive data distribution
+        if not args.quiet:
+            print("  → Interactive data distribution plots...")
+        enhanced_viz.plot_interactive_data_distribution(df)
+        
+        # Correlation analysis
+        if not args.quiet:
+            print("  → Feature correlation heatmap...")
+        enhanced_viz.plot_correlation_heatmap(df)
     
     # Preprocess data
     X, y, feature_names = data_loader.preprocess_data(df)
@@ -108,33 +168,39 @@ def main():
     logger.log_execution_time("Model training", training_start, training_end)
     
     # Perform cross-validation
-    logger.info("Starting cross-validation")
-    cv_validator.perform_cross_validation(model_trainer.models, X, y)
-    cv_validator.print_cv_results()
-    
-    # Get CV summary
-    cv_summary = cv_validator.get_cv_summary()
-    print(f"\n📋 Cross-Validation Summary:")
-    print(cv_summary.round(4))
+    if cli_parser.should_run_component('cross_validation'):
+        logger.info("Starting cross-validation")
+        cv_validator.perform_cross_validation(model_trainer.models, X, y)
+        if not args.quiet:
+            cv_validator.print_cv_results()
+        
+        # Get CV summary
+        cv_summary = cv_validator.get_cv_summary()
+        if not args.quiet:
+            print(f"\n📋 Cross-Validation Summary:")
+            print(cv_summary.round(4))
     
     # Hyperparameter tuning
-    logger.info("Starting hyperparameter tuning")
-    tuning_start = time.time()
-    
-    hp_tuner.tune_hyperparameters(
-        X_train, y_train, 
-        method=config.get('hyperparameter_tuning.method'),
-        n_iter=config.get('hyperparameter_tuning.n_iter')
-    )
-    hp_tuner.print_tuning_results()
-    
-    tuning_end = time.time()
-    logger.log_execution_time("Hyperparameter tuning", tuning_start, tuning_end)
-    
-    # Get tuning summary
-    tuning_summary = hp_tuner.get_tuning_summary()
-    print(f"\n🎯 Hyperparameter Tuning Summary:")
-    print(tuning_summary)
+    if cli_parser.should_run_component('hyperparameter_tuning'):
+        logger.info("Starting hyperparameter tuning")
+        tuning_start = time.time()
+        
+        hp_tuner.tune_hyperparameters(
+            X_train, y_train, 
+            method=config.get('hyperparameter_tuning.method'),
+            n_iter=config.get('hyperparameter_tuning.n_iter')
+        )
+        if not args.quiet:
+            hp_tuner.print_tuning_results()
+        
+        tuning_end = time.time()
+        logger.log_execution_time("Hyperparameter tuning", tuning_start, tuning_end)
+        
+        # Get tuning summary
+        tuning_summary = hp_tuner.get_tuning_summary()
+        if not args.quiet:
+            print(f"\n🎯 Hyperparameter Tuning Summary:")
+            print(tuning_summary)
     
     # Evaluate models
     print("\n📊 Evaluating models...")
