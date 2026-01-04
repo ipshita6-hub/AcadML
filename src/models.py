@@ -57,6 +57,37 @@ class ModelTrainer:
         joblib.dump(model, filepath)
         print(f"Model saved to {filepath}")
     
-    def load_model(self, filepath):
-        """Load saved model"""
-        return joblib.load(filepath)
+    def get_performance_summary(self):
+        """Get a comprehensive performance summary"""
+        if not self.results:
+            return "No model results available"
+        
+        summary = "\n🏆 MODEL PERFORMANCE SUMMARY\n"
+        summary += "=" * 50 + "\n"
+        
+        # Sort models by accuracy
+        sorted_models = sorted(self.results.items(), 
+                             key=lambda x: x[1]['accuracy'], 
+                             reverse=True)
+        
+        for i, (name, result) in enumerate(sorted_models, 1):
+            medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
+            summary += f"{medal} {name}: {result['accuracy']:.4f}\n"
+        
+        # Performance insights
+        best_acc = sorted_models[0][1]['accuracy']
+        worst_acc = sorted_models[-1][1]['accuracy']
+        avg_acc = sum(r['accuracy'] for _, r in self.results.items()) / len(self.results)
+        
+        summary += f"\n📊 Performance Insights:\n"
+        summary += f"   Best: {best_acc:.4f} | Worst: {worst_acc:.4f} | Average: {avg_acc:.4f}\n"
+        summary += f"   Performance Spread: {(best_acc - worst_acc):.4f}\n"
+        
+        if best_acc > 0.9:
+            summary += "   🎯 Excellent performance achieved!\n"
+        elif best_acc > 0.8:
+            summary += "   ✅ Good performance achieved!\n"
+        else:
+            summary += "   ⚠️  Consider feature engineering or advanced models\n"
+        
+        return summary
