@@ -1,10 +1,11 @@
 # 🎓 Academic Performance Prediction
 
-A comprehensive machine learning project that predicts student academic performance using various classification algorithms. This project demonstrates a complete ML pipeline from data generation to model deployment.
+[![Project Status](https://img.shields.io/badge/Status-Complete-brightgreen.svg)](https://github.com/ipshita6-hub/AcadML)
+[![Python](https://img.shields.io/badge/python-v3.8+-blue.svg)](https://www.python.org/)
+[![scikit-learn](https://img.shields.io/badge/scikit--learn-1.3.0+-orange.svg)](https://scikit-learn.org/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-![Python](https://img.shields.io/badge/python-v3.8+-blue.svg)
-![scikit-learn](https://img.shields.io/badge/scikit--learn-1.3.0+-orange.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+A comprehensive machine learning project that predicts student academic performance using various classification algorithms. This project demonstrates a complete ML pipeline from data generation to model deployment.
 
 ## 🚀 Features
 

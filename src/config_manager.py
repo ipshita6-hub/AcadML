@@ -184,15 +184,39 @@ class ConfigManager:
         model_key = model_name.lower().replace(' ', '_')
         return self.get(f'models.{model_key}.enabled', True)
     
-    def get_enabled_models(self):
-        """Get list of enabled models"""
+    def get_enabled_models_summary(self):
+        """Get summary of enabled models with their configurations"""
         models_config = self.get('models', {})
-        enabled_models = []
+        enabled_count = 0
+        disabled_count = 0
+        summary = []
         
         for model_key, model_config in models_config.items():
-            if model_config.get('enabled', True):
-                # Convert key back to display name
-                display_name = model_key.replace('_', ' ').title()
-                enabled_models.append(display_name)
+            display_name = model_key.replace('_', ' ').title()
+            is_enabled = model_config.get('enabled', True)
+            
+            if is_enabled:
+                enabled_count += 1
+                param_count = len(model_config.get('params', {}))
+                summary.append(f"✅ {display_name} ({param_count} tunable params)")
+            else:
+                disabled_count += 1
+                summary.append(f"❌ {display_name} (disabled)")
         
-        return enabled_models
+        result = f"Models Configuration: {enabled_count} enabled, {disabled_count} disabled\n"
+        result += "\n".join(summary)
+        return result
+    
+    def optimize_for_speed(self):
+        """Optimize configuration for faster execution"""
+        self.set('cross_validation.cv_folds', 3)
+        self.set('hyperparameter_tuning.n_iter', 10)
+        self.set('hyperparameter_tuning.cv_folds', 2)
+        print("⚡ Configuration optimized for speed")
+    
+    def optimize_for_accuracy(self):
+        """Optimize configuration for better accuracy"""
+        self.set('cross_validation.cv_folds', 10)
+        self.set('hyperparameter_tuning.n_iter', 50)
+        self.set('hyperparameter_tuning.cv_folds', 5)
+        print("🎯 Configuration optimized for accuracy")

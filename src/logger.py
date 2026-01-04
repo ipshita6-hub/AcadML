@@ -55,28 +55,48 @@ class MLLogger:
         
         self.logger.info("Logger initialized successfully")
     
-    def info(self, message):
-        """Log info message"""
+    def info(self, message: str) -> None:
+        """Log info message
+        
+        Args:
+            message: The message to log at INFO level
+        """
         if self.logger:
             self.logger.info(message)
     
-    def debug(self, message):
-        """Log debug message"""
+    def debug(self, message: str) -> None:
+        """Log debug message
+        
+        Args:
+            message: The message to log at DEBUG level
+        """
         if self.logger:
             self.logger.debug(message)
     
-    def warning(self, message):
-        """Log warning message"""
+    def warning(self, message: str) -> None:
+        """Log warning message
+        
+        Args:
+            message: The message to log at WARNING level
+        """
         if self.logger:
             self.logger.warning(message)
     
-    def error(self, message):
-        """Log error message"""
+    def error(self, message: str) -> None:
+        """Log error message
+        
+        Args:
+            message: The message to log at ERROR level
+        """
         if self.logger:
             self.logger.error(message)
     
-    def critical(self, message):
-        """Log critical message"""
+    def critical(self, message: str) -> None:
+        """Log critical message
+        
+        Args:
+            message: The message to log at CRITICAL level
+        """
         if self.logger:
             self.logger.critical(message)
     

@@ -5,6 +5,8 @@ from sklearn.metrics import (
 )
 import pandas as pd
 import numpy as np
+from typing import Dict, Any, Optional, Tuple
+
 
 class ModelEvaluator:
     def __init__(self):
@@ -146,30 +148,149 @@ class ModelEvaluator:
         
         return best_models
     
-    def calculate_ensemble_score(self, weights=None):
-        """Calculate weighted ensemble score across multiple metrics"""
+    def plot_metrics_heatmap(self, results, save=True):
+        """Create heatmap of all metrics across models"""
+        metrics_df = self.get_metrics_comparison()
+        
+        if metrics_df is None or metrics_df.empty:
+            print("No metrics data available for heatmap")
+            return
+        
+        # Select numeric columns only
+        numeric_cols = metrics_df.select_dtypes(include=[np.number]).columns
+        heatmap_data = metrics_df[numeric_cols].set_index('Model') if 'Model' in metrics_df.columns else metrics_df[numeric_cols]
+        
+        plt.figure(figsize=(14, 8))
+        sns.heatmap(heatmap_data, annot=True, fmt='.3f', cmap='RdYlGn', 
+                   center=0.5, cbar_kws={'label': 'Score'}, linewidths=0.5)
+        plt.title('Comprehensive Model Metrics Heatmap', fontsize=16, pad=20)
+        plt.xlabel('Metrics', fontsize=12)
+        plt.ylabel('Models', fontsize=12)
+        plt.tight_layout()
+        
+        if save:
+            plt.savefig(f'{self.results_dir}/metrics_heatmap.png', dpi=300, bbox_inches='tight')
+        plt.show()
+    
+    def plot_metrics_radar(self, results, model_name=None, save=True):
+        """Create radar chart for model metrics"""
+        if not self.detailed_results:
+            print("No detailed results available")
+            return
+        
+        # Select model
+        if model_name is None:
+            model_name = list(self.detailed_results.keys())[0]
+        
+        if model_name not in self.detailed_results:
+            print(f"Model {model_name} not found")
+            return
+        
+        metrics = self.detailed_results[model_name]['metrics']
+        
+        # Select key metrics for radar
+        key_metrics = ['accuracy', 'precision_macro', 'recall_macro', 'f1_macro', 'balanced_accuracy']
+        values = [metrics.get(m, 0) for m in key_metrics]
+        
+        # Create radar chart
+        angles = np.linspace(0, 2 * np.pi, len(key_metrics), endpoint=False).tolist()
+        values += values[:1]  # Complete the circle
+        angles += angles[:1]
+        
+        fig, ax = plt.subplots(figsize=(10, 10), subplot_kw=dict(projection='polar'))
+        ax.plot(angles, values, 'o-', linewidth=2, label=model_name, color='#1f77b4')
+        ax.fill(angles, values, alpha=0.25, color='#1f77b4')
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(key_metrics, size=10)
+        ax.set_ylim(0, 1)
+        ax.set_title(f'Model Performance Radar - {model_name}', fontsize=14, pad=20)
+        ax.grid(True)
+        ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1))
+        
+        plt.tight_layout()
+        
+        if save:
+            plt.savefig(f'{self.results_dir}/metrics_radar_{model_name.replace(" ", "_")}.png', 
+                       dpi=300, bbox_inches='tight')
+        plt.show()
+
+    def export_comparison_to_csv(self, output_path='results/model_comparison.csv'):
+        """Export model comparison to CSV"""
+        comparison_df = self.get_metrics_comparison()
+        if comparison_df is not None:
+            comparison_df.to_csv(output_path, index=False)
+            print(f"✅ Model comparison exported to {output_path}")
+            return output_path
+        return None
+    
+    def get_model_ranking(self) -> pd.DataFrame:
+        """Get models ranked by overall performance
+        
+        Returns:
+            DataFrame with models ranked by accuracy
+        """
         if not self.detailed_results:
             return None
         
-        if weights is None:
-            # Default weights for key metrics
-            weights = {
-                'accuracy': 0.3,
-                'f1_macro': 0.3,
-                'balanced_accuracy': 0.2,
-                'matthews_corrcoef': 0.2
-            }
-        
-        ensemble_scores = {}
+        ranking_data = []
         for model_name, results in self.detailed_results.items():
-            score = 0
-            total_weight = 0
-            
-            for metric, weight in weights.items():
-                if metric in results['metrics']:
-                    score += results['metrics'][metric] * weight
-                    total_weight += weight
-            
-            ensemble_scores[model_name] = score / total_weight if total_weight > 0 else 0
+            ranking_data.append({
+                'Rank': 0,
+                'Model': model_name,
+                'Accuracy': results['metrics']['accuracy'],
+                'F1-Score': results['metrics']['f1_macro'],
+                'Precision': results['metrics']['precision_macro'],
+                'Recall': results['metrics']['recall_macro']
+            })
         
-        return ensemble_scores
+        df = pd.DataFrame(ranking_data)
+        df = df.sort_values('Accuracy', ascending=False).reset_index(drop=True)
+        df['Rank'] = range(1, len(df) + 1)
+        
+        return df[['Rank', 'Model', 'Accuracy', 'F1-Score', 'Precision', 'Recall']]
+    
+    def get_metric_statistics(self, metric_name: str) -> Dict[str, float]:
+        """Get statistics for a specific metric across all models
+        
+        Args:
+            metric_name: Name of the metric
+            
+        Returns:
+            Dictionary with statistics
+        """
+        metrics_df = self.get_metrics_comparison()
+        if metrics_df is None or metric_name not in metrics_df.columns:
+            return {}
+        
+        values = metrics_df[metric_name].values
+        
+        return {
+            'mean': float(np.mean(values)),
+            'std': float(np.std(values)),
+            'min': float(np.min(values)),
+            'max': float(np.max(values)),
+            'median': float(np.median(values))
+        }
+    
+    def export_detailed_results(self, output_dir='results'):
+        """Export detailed results for each model"""
+        import json
+        import os
+        
+        os.makedirs(output_dir, exist_ok=True)
+        
+        for model_name, results in self.detailed_results.items():
+            # Convert numpy arrays to lists for JSON serialization
+            results_serializable = {
+                'metrics': results['metrics'],
+                'classification_report': results['classification_report'],
+                'confusion_matrix': results['confusion_matrix'].tolist()
+            }
+            
+            filename = os.path.join(output_dir, f'{model_name.replace(" ", "_")}_results.json')
+            with open(filename, 'w') as f:
+                json.dump(results_serializable, f, indent=2)
+            
+            print(f"✅ Results exported for {model_name}")
+        
+        return output_dir

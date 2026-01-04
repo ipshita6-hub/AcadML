@@ -287,4 +287,41 @@ class DataValidator:
         outlier_penalty = min(total_outlier_percentage / 2, 10)
         score -= outlier_penalty
         
-        return max(score, 0)  # Ensure score doesn't go below 0
+    def get_quality_insights(self):
+        """Get actionable data quality insights"""
+        if not self.validation_results:
+            return "No validation results available"
+        
+        insights = []
+        score = self.get_data_quality_score()
+        
+        # Overall assessment
+        if score >= 90:
+            insights.append("🌟 Excellent data quality! Your dataset is production-ready.")
+        elif score >= 80:
+            insights.append("✅ Good data quality with minor issues to address.")
+        elif score >= 70:
+            insights.append("⚠️  Moderate data quality. Consider data cleaning.")
+        else:
+            insights.append("❌ Poor data quality. Significant cleaning required.")
+        
+        # Specific recommendations
+        missing = self.validation_results.get('missing_values', {})
+        if missing.get('has_missing', False):
+            insights.append(f"📝 Action: Handle {missing.get('total_missing', 0)} missing values")
+        
+        duplicates = self.validation_results.get('duplicates', {})
+        if duplicates.get('has_duplicates', False):
+            insights.append(f"🔄 Action: Remove {duplicates.get('duplicate_count', 0)} duplicate rows")
+        
+        balance = self.validation_results.get('class_balance', {})
+        if not balance.get('is_balanced', True):
+            ratio = balance.get('imbalance_ratio', 1)
+            insights.append(f"⚖️  Action: Address class imbalance (ratio: {ratio:.1f}:1)")
+        
+        correlations = self.validation_results.get('feature_correlations', {})
+        if correlations.get('has_multicollinearity', False):
+            count = len(correlations.get('high_correlations', []))
+            insights.append(f"🔗 Action: Review {count} highly correlated feature pairs")
+        
+        return "\n".join(insights)

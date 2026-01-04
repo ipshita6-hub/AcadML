@@ -1,15 +1,16 @@
 import pandas as pd
 import numpy as np
+from typing import Tuple, Optional, Dict, List
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 
 class DataLoader:
-    def __init__(self, data_path=None):
+    def __init__(self, data_path: Optional[str] = None) -> None:
         self.data_path = data_path
         self.scaler = StandardScaler()
-        self.label_encoders = {}
+        self.label_encoders: Dict[str, LabelEncoder] = {}
         
-    def generate_sample_data(self, n_samples=1000):
+    def generate_sample_data(self, n_samples: int = 1000) -> pd.DataFrame:
         """Generate synthetic academic performance data"""
         np.random.seed(42)
         
@@ -36,14 +37,14 @@ class DataLoader:
         
         return pd.DataFrame(data)
     
-    def load_data(self):
+    def load_data(self) -> pd.DataFrame:
         """Load or generate data"""
         if self.data_path:
             return pd.read_csv(self.data_path)
         else:
             return self.generate_sample_data()
     
-    def preprocess_data(self, df):
+    def preprocess_data(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray, List[str]]:
         """Preprocess the data for ML"""
         # Handle categorical variables
         categorical_cols = df.select_dtypes(include=['object']).columns
@@ -68,6 +69,24 @@ class DataLoader:
         
         return X_scaled, y_encoded, X.columns.tolist()
     
-    def split_data(self, X, y, test_size=0.2, random_state=42):
+    def split_data(self, X: np.ndarray, y: np.ndarray, test_size: float = 0.2, random_state: int = 42) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Split data into train and test sets"""
         return train_test_split(X, y, test_size=test_size, random_state=random_state, stratify=y)
+    
+    def validate_data_shapes(self, X: np.ndarray, y: np.ndarray) -> bool:
+        """Validate that X and y have compatible shapes
+        
+        Args:
+            X: Feature matrix
+            y: Target vector
+            
+        Returns:
+            True if shapes are valid, raises ValueError otherwise
+        """
+        if X.shape[0] != y.shape[0]:
+            raise ValueError(f"X and y must have same number of samples. Got X: {X.shape[0]}, y: {y.shape[0]}")
+        if X.ndim != 2:
+            raise ValueError(f"X must be 2-dimensional. Got shape: {X.shape}")
+        if y.ndim != 1:
+            raise ValueError(f"y must be 1-dimensional. Got shape: {y.shape}")
+        return True

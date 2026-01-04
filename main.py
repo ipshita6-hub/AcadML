@@ -2,6 +2,25 @@
 """
 Academic Performance Prediction using Machine Learning Classification
 Enhanced with Interactive Visualizations and Advanced Metrics
+
+This module orchestrates the complete ML pipeline including:
+- Data loading and preprocessing
+- Model training and evaluation
+- Cross-validation and hyperparameter tuning
+- Advanced visualizations and reporting
+- Performance benchmarking
+
+Usage:
+    python main.py [options]
+    
+Options:
+    --config CONFIG_FILE    Path to configuration file
+    --data-file DATA_FILE   Path to custom dataset
+    --dry-run              Run without execution
+    --quiet                Suppress output
+    --profile              Enable performance profiling
+    --run-tests            Run unit tests before execution
+    --save-config FILE     Save configuration to file
 """
 
 from src.data_loader import DataLoader
@@ -24,57 +43,66 @@ import sys
 def main():
     start_time = time.time()
     
-    # Parse command line arguments
-    cli_parser = CLIParser()
-    args = cli_parser.parse_args()
-    cli_parser.validate_args()
-    
-    print("🎓 Academic Performance Prediction Project - Enhanced Edition")
-    print("=" * 60)
-    
-    # Show CLI arguments if any were provided
-    if len(sys.argv) > 1:
-        cli_parser.print_args_summary()
-    
-    # Handle special modes
-    if args.dry_run:
-        print("\n🔍 DRY RUN MODE - Showing configuration without execution")
-    
-    if args.run_tests:
-        print("\n🧪 Running unit tests...")
-        import subprocess
-        result = subprocess.run([sys.executable, 'tests/run_tests.py'], 
-                              capture_output=True, text=True)
-        print(result.stdout)
-        if result.returncode != 0:
-            print("❌ Tests failed. Exiting.")
-            sys.exit(1)
-        print("✅ All tests passed!")
-    
-    # Load configuration
-    config = ConfigManager(args.config)
-    
-    # Update config with CLI arguments
-    cli_parser.update_config_from_args(config)
-    
-    config.validate_config()
-    config.create_directories()
-    
-    # Initialize logger
-    logger = MLLogger(config)
-    session_id = logger.create_session_log()
-    
-    # Save config if requested
-    if args.save_config:
-        config.save_config(args.save_config)
-        print(f"✅ Configuration saved to {args.save_config}")
-    
-    if not args.quiet:
-        config.print_config()
-    
-    if args.dry_run:
-        print("\n✅ Dry run completed. Configuration validated.")
-        return
+    try:
+        # Parse command line arguments
+        cli_parser = CLIParser()
+        args = cli_parser.parse_args()
+        cli_parser.validate_args()
+        
+        print("🎓 Academic Performance Prediction Project - Enhanced Edition")
+        print("=" * 60)
+        
+        # Show CLI arguments if any were provided
+        if len(sys.argv) > 1:
+            cli_parser.print_args_summary()
+        
+        # Handle special modes
+        if args.dry_run:
+            print("\n🔍 DRY RUN MODE - Showing configuration without execution")
+        
+        if args.run_tests:
+            print("\n🧪 Running unit tests...")
+            import subprocess
+            result = subprocess.run([sys.executable, 'tests/run_tests.py'], 
+                                  capture_output=True, text=True)
+            print(result.stdout)
+            if result.returncode != 0:
+                print("❌ Tests failed. Exiting.")
+                sys.exit(1)
+            print("✅ All tests passed!")
+        
+        # Load configuration
+        config = ConfigManager(args.config)
+        
+        # Update config with CLI arguments
+        cli_parser.update_config_from_args(config)
+        
+        config.validate_config()
+        config.create_directories()
+        
+        # Initialize logger
+        logger = MLLogger(config)
+        session_id = logger.create_session_log()
+        
+        # Save config if requested
+        if args.save_config:
+            config.save_config(args.save_config)
+            print(f"✅ Configuration saved to {args.save_config}")
+        
+        if not args.quiet:
+            config.print_config()
+        
+        if args.dry_run:
+            print("\n✅ Dry run completed. Configuration validated.")
+            return
+            
+    except KeyboardInterrupt:
+        print("\n\n⚠️  Process interrupted by user. Exiting gracefully...")
+        sys.exit(0)
+    except Exception as e:
+        print(f"\n❌ Fatal error during initialization: {str(e)}")
+        print("Please check your configuration and try again.")
+        sys.exit(1)
     
     # Initialize components with configuration
     data_loader = DataLoader()
@@ -129,6 +157,8 @@ def main():
         validator.validate_dataset(df, target_column=config.get('data.target_column'))
         if not args.quiet:
             validator.print_validation_report()
+            print(f"\n💡 Data Quality Insights:")
+            print(validator.get_quality_insights())
         quality_score = validator.get_data_quality_score()
         logger.log_data_validation(quality_score)
         if not args.quiet:
@@ -305,6 +335,10 @@ def main():
     # Get best model and show feature importance
     best_name, best_model = model_trainer.get_best_model()
     logger.log_best_model(best_name, model_trainer.results[best_name]['accuracy'])
+    
+    # Print comprehensive performance summary
+    if not args.quiet:
+        print(model_trainer.get_performance_summary())
     
     print(f"\n🏆 Best performing model: {best_name}")
     print(f"Best accuracy: {model_trainer.results[best_name]['accuracy']:.4f}")
