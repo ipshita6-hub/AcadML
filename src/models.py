@@ -3,20 +3,21 @@ from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from typing import Dict, Tuple, Any
 import joblib
 import os
 
 class ModelTrainer:
-    def __init__(self):
-        self.models = {
+    def __init__(self) -> None:
+        self.models: Dict[str, Any] = {
             'Random Forest': RandomForestClassifier(n_estimators=100, random_state=42),
             'Gradient Boosting': GradientBoostingClassifier(random_state=42),
             'SVM': SVC(random_state=42),
             'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
             'KNN': KNeighborsClassifier(n_neighbors=5)
         }
-        self.trained_models = {}
-        self.results = {}
+        self.trained_models: Dict[str, Any] = {}
+        self.results: Dict[str, Dict[str, Any]] = {}
     
     def train_models(self, X_train, y_train):
         """Train all models"""
@@ -46,18 +47,18 @@ class ModelTrainer:
             print("Classification Report:")
             print(self.results[name]['classification_report'])
     
-    def get_best_model(self):
+    def get_best_model(self) -> Tuple[str, Any]:
         """Get the model with highest accuracy"""
         best_model_name = max(self.results.keys(), key=lambda x: self.results[x]['accuracy'])
         return best_model_name, self.trained_models[best_model_name]
     
-    def save_model(self, model_name, model, filepath):
+    def save_model(self, model_name: str, model: Any, filepath: str) -> None:
         """Save trained model"""
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         joblib.dump(model, filepath)
         print(f"Model saved to {filepath}")
     
-    def get_performance_summary(self):
+    def get_performance_summary(self) -> str:
         """Get a comprehensive performance summary"""
         if not self.results:
             return "No model results available"
