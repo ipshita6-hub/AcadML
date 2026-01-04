@@ -5,6 +5,8 @@ from sklearn.metrics import (
 )
 import pandas as pd
 import numpy as np
+from typing import Dict, Any, Optional, Tuple
+
 
 class ModelEvaluator:
     def __init__(self):
@@ -220,6 +222,55 @@ class ModelEvaluator:
             print(f"✅ Model comparison exported to {output_path}")
             return output_path
         return None
+    
+    def get_model_ranking(self) -> pd.DataFrame:
+        """Get models ranked by overall performance
+        
+        Returns:
+            DataFrame with models ranked by accuracy
+        """
+        if not self.detailed_results:
+            return None
+        
+        ranking_data = []
+        for model_name, results in self.detailed_results.items():
+            ranking_data.append({
+                'Rank': 0,
+                'Model': model_name,
+                'Accuracy': results['metrics']['accuracy'],
+                'F1-Score': results['metrics']['f1_macro'],
+                'Precision': results['metrics']['precision_macro'],
+                'Recall': results['metrics']['recall_macro']
+            })
+        
+        df = pd.DataFrame(ranking_data)
+        df = df.sort_values('Accuracy', ascending=False).reset_index(drop=True)
+        df['Rank'] = range(1, len(df) + 1)
+        
+        return df[['Rank', 'Model', 'Accuracy', 'F1-Score', 'Precision', 'Recall']]
+    
+    def get_metric_statistics(self, metric_name: str) -> Dict[str, float]:
+        """Get statistics for a specific metric across all models
+        
+        Args:
+            metric_name: Name of the metric
+            
+        Returns:
+            Dictionary with statistics
+        """
+        metrics_df = self.get_metrics_comparison()
+        if metrics_df is None or metric_name not in metrics_df.columns:
+            return {}
+        
+        values = metrics_df[metric_name].values
+        
+        return {
+            'mean': float(np.mean(values)),
+            'std': float(np.std(values)),
+            'min': float(np.min(values)),
+            'max': float(np.max(values)),
+            'median': float(np.median(values))
+        }
     
     def export_detailed_results(self, output_dir='results'):
         """Export detailed results for each model"""
