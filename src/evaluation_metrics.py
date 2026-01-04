@@ -211,3 +211,35 @@ class ModelEvaluator:
             plt.savefig(f'{self.results_dir}/metrics_radar_{model_name.replace(" ", "_")}.png', 
                        dpi=300, bbox_inches='tight')
         plt.show()
+
+    def export_comparison_to_csv(self, output_path='results/model_comparison.csv'):
+        """Export model comparison to CSV"""
+        comparison_df = self.get_metrics_comparison()
+        if comparison_df is not None:
+            comparison_df.to_csv(output_path, index=False)
+            print(f"✅ Model comparison exported to {output_path}")
+            return output_path
+        return None
+    
+    def export_detailed_results(self, output_dir='results'):
+        """Export detailed results for each model"""
+        import json
+        import os
+        
+        os.makedirs(output_dir, exist_ok=True)
+        
+        for model_name, results in self.detailed_results.items():
+            # Convert numpy arrays to lists for JSON serialization
+            results_serializable = {
+                'metrics': results['metrics'],
+                'classification_report': results['classification_report'],
+                'confusion_matrix': results['confusion_matrix'].tolist()
+            }
+            
+            filename = os.path.join(output_dir, f'{model_name.replace(" ", "_")}_results.json')
+            with open(filename, 'w') as f:
+                json.dump(results_serializable, f, indent=2)
+            
+            print(f"✅ Results exported for {model_name}")
+        
+        return output_dir
