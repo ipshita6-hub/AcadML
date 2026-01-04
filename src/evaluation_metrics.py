@@ -146,30 +146,68 @@ class ModelEvaluator:
         
         return best_models
     
-    def calculate_ensemble_score(self, weights=None):
-        """Calculate weighted ensemble score across multiple metrics"""
+    def plot_metrics_heatmap(self, results, save=True):
+        """Create heatmap of all metrics across models"""
+        metrics_df = self.get_metrics_comparison()
+        
+        if metrics_df is None or metrics_df.empty:
+            print("No metrics data available for heatmap")
+            return
+        
+        # Select numeric columns only
+        numeric_cols = metrics_df.select_dtypes(include=[np.number]).columns
+        heatmap_data = metrics_df[numeric_cols].set_index('Model') if 'Model' in metrics_df.columns else metrics_df[numeric_cols]
+        
+        plt.figure(figsize=(14, 8))
+        sns.heatmap(heatmap_data, annot=True, fmt='.3f', cmap='RdYlGn', 
+                   center=0.5, cbar_kws={'label': 'Score'}, linewidths=0.5)
+        plt.title('Comprehensive Model Metrics Heatmap', fontsize=16, pad=20)
+        plt.xlabel('Metrics', fontsize=12)
+        plt.ylabel('Models', fontsize=12)
+        plt.tight_layout()
+        
+        if save:
+            plt.savefig(f'{self.results_dir}/metrics_heatmap.png', dpi=300, bbox_inches='tight')
+        plt.show()
+    
+    def plot_metrics_radar(self, results, model_name=None, save=True):
+        """Create radar chart for model metrics"""
         if not self.detailed_results:
-            return None
+            print("No detailed results available")
+            return
         
-        if weights is None:
-            # Default weights for key metrics
-            weights = {
-                'accuracy': 0.3,
-                'f1_macro': 0.3,
-                'balanced_accuracy': 0.2,
-                'matthews_corrcoef': 0.2
-            }
+        # Select model
+        if model_name is None:
+            model_name = list(self.detailed_results.keys())[0]
         
-        ensemble_scores = {}
-        for model_name, results in self.detailed_results.items():
-            score = 0
-            total_weight = 0
-            
-            for metric, weight in weights.items():
-                if metric in results['metrics']:
-                    score += results['metrics'][metric] * weight
-                    total_weight += weight
-            
-            ensemble_scores[model_name] = score / total_weight if total_weight > 0 else 0
+        if model_name not in self.detailed_results:
+            print(f"Model {model_name} not found")
+            return
         
-        return ensemble_scores
+        metrics = self.detailed_results[model_name]['metrics']
+        
+        # Select key metrics for radar
+        key_metrics = ['accuracy', 'precision_macro', 'recall_macro', 'f1_macro', 'balanced_accuracy']
+        values = [metrics.get(m, 0) for m in key_metrics]
+        
+        # Create radar chart
+        angles = np.linspace(0, 2 * np.pi, len(key_metrics), endpoint=False).tolist()
+        values += values[:1]  # Complete the circle
+        angles += angles[:1]
+        
+        fig, ax = plt.subplots(figsize=(10, 10), subplot_kw=dict(projection='polar'))
+        ax.plot(angles, values, 'o-', linewidth=2, label=model_name, color='#1f77b4')
+        ax.fill(angles, values, alpha=0.25, color='#1f77b4')
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(key_metrics, size=10)
+        ax.set_ylim(0, 1)
+        ax.set_title(f'Model Performance Radar - {model_name}', fontsize=14, pad=20)
+        ax.grid(True)
+        ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1))
+        
+        plt.tight_layout()
+        
+        if save:
+            plt.savefig(f'{self.results_dir}/metrics_radar_{model_name.replace(" ", "_")}.png', 
+                       dpi=300, bbox_inches='tight')
+        plt.show()
