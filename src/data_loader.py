@@ -72,3 +72,21 @@ class DataLoader:
     def split_data(self, X: np.ndarray, y: np.ndarray, test_size: float = 0.2, random_state: int = 42) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Split data into train and test sets"""
         return train_test_split(X, y, test_size=test_size, random_state=random_state, stratify=y)
+    
+    def validate_data_shapes(self, X: np.ndarray, y: np.ndarray) -> bool:
+        """Validate that X and y have compatible shapes
+        
+        Args:
+            X: Feature matrix
+            y: Target vector
+            
+        Returns:
+            True if shapes are valid, raises ValueError otherwise
+        """
+        if X.shape[0] != y.shape[0]:
+            raise ValueError(f"X and y must have same number of samples. Got X: {X.shape[0]}, y: {y.shape[0]}")
+        if X.ndim != 2:
+            raise ValueError(f"X must be 2-dimensional. Got shape: {X.shape}")
+        if y.ndim != 1:
+            raise ValueError(f"y must be 1-dimensional. Got shape: {y.shape}")
+        return True
