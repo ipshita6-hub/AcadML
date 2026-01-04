@@ -2,6 +2,25 @@
 """
 Academic Performance Prediction using Machine Learning Classification
 Enhanced with Interactive Visualizations and Advanced Metrics
+
+This module orchestrates the complete ML pipeline including:
+- Data loading and preprocessing
+- Model training and evaluation
+- Cross-validation and hyperparameter tuning
+- Advanced visualizations and reporting
+- Performance benchmarking
+
+Usage:
+    python main.py [options]
+    
+Options:
+    --config CONFIG_FILE    Path to configuration file
+    --data-file DATA_FILE   Path to custom dataset
+    --dry-run              Run without execution
+    --quiet                Suppress output
+    --profile              Enable performance profiling
+    --run-tests            Run unit tests before execution
+    --save-config FILE     Save configuration to file
 """
 
 from src.data_loader import DataLoader
