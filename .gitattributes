@@ -1,0 +1,4 @@
+*.py linguist-detectable=true
+*.html linguist-vendored
+templates/* linguist-vendored
+static/* linguist-vendored
